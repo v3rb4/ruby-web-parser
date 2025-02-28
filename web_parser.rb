@@ -32,7 +32,6 @@ def parse_website(url)
   end
 end
 
-# Example usage
 if ARGV.empty?
   puts "Specify a URL for parsing, for example: ruby web_parser.rb https://example.com"
 else
