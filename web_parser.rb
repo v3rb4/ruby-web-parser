@@ -1,13 +1,25 @@
 require 'nokogiri'
 require 'open-uri'
+require 'net/http'
+require 'uri'
 
 # Function for parsing a web page
 def parse_website(url)
   begin
     puts "Starting to parse website: #{url}"
-    # Download HTML from the specified URL
-    html = URI.open(url).read
-    # Parse HTML using Nokogiri
+    
+    # Open URL and get headers
+    uri = URI(url)
+    response = Net::HTTP.get_response(uri)
+
+    puts "\nSecurity Headers:"
+    security_headers = ["Content-Security-Policy", "Strict-Transport-Security", "X-Frame-Options", "X-Content-Type-Options"]
+    security_headers.each do |header|
+      puts " - #{header}: #{response[header]}" if response[header]
+    end
+
+    # Download HTML
+    html = URI.open(url, "User-Agent" => "Mozilla/5.0").read
     doc = Nokogiri::HTML(html)
 
     # Find all headers (h1, h2)
@@ -22,6 +34,14 @@ def parse_website(url)
       href = link['href']
       text = link.text.strip
       puts " - Text: #{text}, URL: #{href}" unless href.nil?
+    end
+
+    # Look for potential admin or sensitive pages
+    puts "\nPotential Sensitive Links:"
+    sensitive_keywords = ["admin", "login", "dashboard", "config", "backup"]
+    doc.css('a').each do |link|
+      href = link['href']
+      puts " - Suspicious link found: #{href}" if href && sensitive_keywords.any? { |keyword| href.include?(keyword) }
     end
 
     puts "\nParsing completed!"
